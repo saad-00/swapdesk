@@ -1,0 +1,25 @@
+# Build
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env
+
+# Schedule files may contain real employee data: never commit them
+*.xlsx
+*.xls
+*.xlsm
+*.csv
