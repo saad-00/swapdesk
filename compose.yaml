@@ -1,0 +1,16 @@
+# Local development database.
+# Started automatically by spring-boot-docker-compose, or manually: docker compose up -d
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: swapdesk
+      POSTGRES_USER: swapdesk
+      POSTGRES_PASSWORD: swapdesk   # local dev only, never used in production
+    ports:
+      - "5432:5432"
+    volumes:
+      - swapdesk-pgdata:/var/lib/postgresql/data
+
+volumes:
+  swapdesk-pgdata:

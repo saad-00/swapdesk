@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: swapdesk
+
+  # Overridden by environment variables in Docker / Render / Supabase.
+  # Locally, spring-boot-docker-compose supplies these from compose.yaml.
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/swapdesk}
+    username: ${DB_USERNAME:swapdesk}
+    password: ${DB_PASSWORD:swapdesk}
+
+  jpa:
+    # Flyway owns the schema; Hibernate only checks that entities match it.
+    hibernate:
+      ddl-auto: validate
+    # Don't keep the DB session open while rendering the HTTP response.
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+  docker:
+    compose:
+      # Keep the DB container running between restarts (faster dev loop).
+      lifecycle-management: start-only
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
