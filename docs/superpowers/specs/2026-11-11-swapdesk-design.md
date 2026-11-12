@@ -1,6 +1,6 @@
 # SwapDesk: Design
 
-Status: awaiting owner approval · Date: 2026-11-11
+Status: approved by owner · Date: 2026-11-11
 
 Decisions are marked **[owner]** when the project owner decided them and **[proposal]** when they were proposed during design and accepted by the owner without change. Anything without a mark is background.
 
