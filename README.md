@@ -2,7 +2,7 @@
 
 Shift swap governance system for call centers, built with Spring Boot 4, PostgreSQL and Spring Security.
 
-> Work in progress. See [docs/domain-rules.md](docs/domain-rules.md) for the business rules.
+> Work in progress. See the [system design](docs/superpowers/specs/2026-11-11-swapdesk-design.md).
 
 ## Tech stack
 

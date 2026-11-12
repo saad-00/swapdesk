@@ -1,6 +1,6 @@
 # SwapDesk: Design
 
-Status: draft for approval · Date: 2026-11-11
+Status: awaiting owner approval · Date: 2026-11-11
 
 Decisions are marked **[owner]** when the project owner decided them and **[proposal]** when they were proposed during design and accepted by the owner without change. Anything without a mark is background.
 
@@ -36,7 +36,7 @@ A call center of about 60–70 agents gets its 14-day schedule from an external 
 
 1. WFM sends the next cycle's file, usually on the **Thursday of the last week** of the current cycle.
 2. The **schedule coordinator** imports it: upload → preview with errors and warnings → confirm. Confirming opens the cycle for swaps.
-3. Employees swap weeks until the **deadline: the Saturday before the cycle starts, 23:59 Asia/Riyadh [owner]**. The real window is about two and a half days.
+3. Employees swap and supervisors approve until the **deadline: the Saturday before the cycle starts, 23:59 Asia/Riyadh [owner]**. The real window is about two and a half days. After the deadline only the coordinator's WFM steps continue (see §7.8).
 4. Supervisors approve their own team members' side.
 5. The coordinator exports approved swaps to Excel for WFM, then records WFM's decision. WFM rejections are rare [owner].
 
@@ -92,7 +92,7 @@ A swap of week *w* between A and B is allowed only if all of these hold:
 1. A and B have the same `Channel` **and** the same `Language` in that cycle. **[owner]**
 2. If the receiver is female, **every working shift** in the week she would receive starts between **06:00 and 15:00 inclusive**. Both bounds are admin settings. **[owner]**
 3. Neither A's nor B's week contains `V`. **[owner + proposal: "either side"]**
-4. Now is before the cycle's deadline. **[owner]**
+4. Now is before the cycle's deadline. This applies to employee and supervisor actions only (see §7.8). **[owner]**
 5. Neither week is locked by another request (see §7.4). **[owner]**
 6. Both employees are active members of the open cycle.
 
@@ -138,7 +138,7 @@ Also: `REJECTED_BY_PEER`, `REJECTED_BY_SUPERVISOR` (reason required), `CANCELLED
 | `ON_HOLD` | the locking request fails and re-check fails | `CANCELLED` (with reason) |
 | `ON_HOLD` | the locking request reaches `WFM_APPROVED` | `CANCELLED` |
 | `ON_HOLD` | its owner or peer withdraws | `CANCELLED` |
-| any non-terminal except `SENT_TO_WFM` | deadline passes | `EXPIRED` |
+| `OPEN`, `PENDING_PEER`, `ON_HOLD`, `PENDING_SUPERVISOR` | deadline passes | `EXPIRED` |
 | non-terminal | re-import makes it ineligible | `CANCELLED` (with reason) |
 
 "The locking request fails" means it ends as `REJECTED_BY_SUPERVISOR`, `CANCELLED`, `WFM_REJECTED` or `EXPIRED`.
@@ -147,7 +147,7 @@ Also: `REJECTED_BY_PEER`, `REJECTED_BY_SUPERVISOR` (reason required), `CANCELLED
 - Before acceptance, a week may appear in many `OPEN` or `PENDING_PEER` requests.
 - On acceptance (entering `PENDING_SUPERVISOR`), **both parties' weeks** are locked to that request. Every other `OPEN` or `PENDING_PEER` request touching either locked week moves to `ON_HOLD`, remembering its previous status.
 - The rule "one locked request per week" is enforced **in the database** with a unique constraint on active week locks, not only in Java code. **[proposal]**
-- Locks are released when the request fails, which revives held requests after a full re-check. They become permanent when it reaches `WFM_APPROVED`, which cancels the held requests.
+- Locks are released when the request fails, which revives held requests after a full re-check. They become permanent when it reaches `WFM_APPROVED`, which cancels the held requests. **A week swapped and approved by WFM can never be swapped again in that cycle, not even back [owner].** Eligibility therefore always uses the baseline schedule.
 - Everyone affected is notified when a request is held, revived or cancelled, with the reason.
 
 ### 7.5 Supervisor approval **[owner + proposal]**
@@ -165,8 +165,9 @@ Also: `REJECTED_BY_PEER`, `REJECTED_BY_SUPERVISOR` (reason required), `CANCELLED
 - When two people accept at once, exactly one succeeds; the other gets a clear "already taken" error. There is a dedicated concurrency integration test.
 
 ### 7.8 Deadline
-- A scheduled job expires eligible requests at the deadline. Creating and accepting requests is refused after it.
-- **[proposal]:** requests already `SENT_TO_WFM` are not expired, so the coordinator can still record WFM's decision afterwards.
+- **The deadline closes employee and supervisor work [owner, option b].** After it nobody can create, accept or approve a request, and requests still in `OPEN`, `PENDING_PEER`, `ON_HOLD` or `PENDING_SUPERVISOR` become `EXPIRED`.
+- Requests in `APPROVED_BY_SUPERVISOR` or `SENT_TO_WFM` survive the deadline. The coordinator can still export them and record WFM's decision afterwards, so an approved swap is never lost to an administrative delay.
+- A scheduled job performs the expiry, and every transition also checks the deadline itself.
 
 ---
 
@@ -322,7 +323,6 @@ An independent review of this design raised the following. They are settled here
   - A start date earlier than the open cycle is refused.
   - A file that arrives after its deadline can be imported with a warning, but it opens no swap window.
 - **Hosting sleeps** (Render and Supabase free tiers): the deadline is enforced inside every transition, not only by the scheduled job, and the expiry job also runs at startup. The demo cycle's dates are generated relative to "now", so the demo always has an open window.
-- `docs/domain-rules.md` is superseded by this document and will be removed.
 
 ## 19. Left to the builder
 
